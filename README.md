@@ -1,214 +1,276 @@
-# Mini ERP + CRM Operations Portal
+# 📦 Mini ERP + CRM Operations Portal
 
-An internal ERP + CRM operations portal for a wholesale/distribution company. Demonstrates full-stack development, REST API design, database relationships, role-based access, inventory business logic, atomic transactions, and PDF generation.
+An enterprise-grade internal **ERP + CRM Operations Portal** built for wholesale, distribution, and supply chain businesses. Designed to manage **Customer Relationships**, **Inventory Tracking**, and **Sales Challan Workflows** with strict **Role-Based Access Control (RBAC)**, **Atomic Stock Transactions**, **Data Snapshots**, and **Automated PDF Invoice Generation**.
 
-## Features
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB.svg?logo=react)](https://react.dev/)
+[![Express](https://img.shields.io/badge/Express-4.21-000000.svg?logo=express)](https://expressjs.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-5.22-2D3748.svg?logo=prisma)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon_Cloud-4169E1.svg?logo=postgresql)](https://neon.tech/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC.svg?logo=tailwindcss)](https://tailwindcss.com/)
+[![Deployed on Vercel](https://img.shields.io/badge/Frontend-Vercel-000000.svg?logo=vercel)](https://mini-erp-plum-two.vercel.app)
+[![Deployed on Railway](https://img.shields.io/badge/Backend-Railway-0B0D0E.svg?logo=railway)](https://mini-erp-production-545a.up.railway.app/api/health)
 
-- **Authentication** — JWT login, 4 user roles (Admin, Sales, Warehouse, Accounts)
-- **CRM** — Customer management, follow-up notes, status tracking, search/filter/pagination
-- **Inventory** — Product management, stock IN/OUT movements, low stock alerts
-- **Sales Challans** — Draft → Confirm workflow with atomic stock deduction
-- **Snapshots** — Product and customer data preserved on challans at creation time
-- **PDF Invoice** — Puppeteer-generated invoice PDF for confirmed challans
-- **RBAC** — Backend-enforced role permissions on every endpoint
+---
 
-## Tech Stack
+## 🌐 Live Application Links
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Node.js, TypeScript, Express.js |
-| ORM | Prisma |
-| Database | PostgreSQL (Neon hosted) |
-| Auth | JWT + bcrypt |
-| Validation | Zod |
-| PDF | Puppeteer |
-| Frontend | React + Vite + TypeScript |
-| Styling | Tailwind CSS |
-| HTTP | Axios |
-| Routing | React Router v7 |
-| Animation | Framer Motion + Lenis |
+- **Live Frontend**: [https://mini-erp-plum-two.vercel.app](https://mini-erp-plum-two.vercel.app)
+- **Live Backend API**: `https://mini-erp-production-545a.up.railway.app/api`
+- **API Health Check**: [https://mini-erp-production-545a.up.railway.app/api/health](https://mini-erp-production-545a.up.railway.app/api/health)
 
-## Architecture
+---
 
+## 🔐 Key Features & Capabilities
+
+- **Role-Based Access Control (RBAC)**: Backend-enforced permissions across 4 distinct roles (`ADMIN`, `SALES`, `WAREHOUSE`, `ACCOUNTS`).
+- **CRM Module**: Lead & customer management, status workflows (`LEAD` ➔ `ACTIVE` ➔ `INACTIVE`), interaction logs, and scheduled follow-up tracking.
+- **Inventory Management**: Real-time stock levels, low-stock threshold alerts, categorised products, and itemized stock `IN`/`OUT` movement logs.
+- **Sales Challans Workflow**: Two-phase lifecycle (`DRAFT` ➔ `CONFIRMED` or `CANCELLED`).
+- **Atomic Stock Deduction**: Uses Prisma `$transaction` to validate stock, deduct quantities, log movements, and update status atomically.
+- **Immutability & Snapshot Pattern**: Preserves historical accuracy by snapshotting customer and product data (name, SKU, unit price) at the exact moment of order creation.
+- **PDF Invoice Generation**: Server-side HTML-to-PDF invoice rendering powered by headless Puppeteer.
+
+---
+
+## 🔑 Demo Access Credentials
+
+All test accounts share the default password: **`password123`**
+
+| Role | Email | Permitted Actions |
+| :--- | :--- | :--- |
+| 👑 **Admin** | `admin@example.com` | Full system access across all modules, settings, and users |
+| 💼 **Sales** | `sales@example.com` | Customer CRM, Follow-up notes, Create & Confirm Sales Challans |
+| 📦 **Warehouse** | `warehouse@example.com` | Inventory CRUD, Stock IN/OUT adjustments, View Movements |
+| 📊 **Accounts** | `accounts@example.com` | View Challans, Generate & Export PDF Invoices, View Dashboard |
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    Client["React 18 + Vite SPA (Vercel)"] -->|HTTPS / REST API| AuthMiddleware["Auth Middleware (JWT Verification)"]
+    AuthMiddleware --> RBACGuard["Role Middleware (RBAC Check)"]
+    RBACGuard --> Controller["Express Controller Layer"]
+    Controller --> Service["Service Layer (Business Logic & Zod Validation)"]
+    Service -->|Prisma ORM| Database[("Neon PostgreSQL Cloud DB")]
+    Service -->|Puppeteer| PDFEngine["Headless Chrome PDF Generator"]
 ```
-Route → Middleware (auth + role) → Controller → Service → Prisma → PostgreSQL
+
+### Request Processing Flow
+`HTTP Request` ➔ `CORS Middleware` ➔ `JWT Auth` ➔ `Role Guard` ➔ `Zod Validator` ➔ `Controller` ➔ `Service` ➔ `Prisma Transaction` ➔ `PostgreSQL`
+
+---
+
+## 🗄️ Database Schema & Entities
+
+```mermaid
+erDiagram
+    User ||--o{ StockMovement : creates
+    User ||--o{ FollowUpNote : creates
+    User ||--o{ SalesChallan : creates
+    Customer ||--o{ FollowUpNote : has
+    Customer ||--o{ SalesChallan : places
+    Product ||--o{ StockMovement : tracks
+    Product ||--o{ ChallanItem : contains
+    SalesChallan ||--|{ ChallanItem : contains
+
+    User {
+        int id PK
+        string email UK
+        string passwordHash
+        Role role "ADMIN | SALES | WAREHOUSE | ACCOUNTS"
+    }
+
+    Customer {
+        int id PK
+        string name
+        string mobile
+        string businessName
+        CustomerStatus status "LEAD | ACTIVE | INACTIVE"
+        CustomerType type "WHOLESALE | RETAIL | DISTRIBUTOR"
+        datetime followUpDate
+    }
+
+    Product {
+        int id PK
+        string sku UK
+        string name
+        decimal unitPrice
+        int currentStock
+        int minimumStock
+    }
+
+    SalesChallan {
+        int id PK
+        string challanNumber UK
+        ChallanStatus status "DRAFT | CONFIRMED | CANCELLED"
+        string customerNameSnapshot
+        decimal totalAmount
+    }
 ```
 
-Frontend: `AuthContext → Protected Routes → Pages → Services (Axios) → API`
+---
 
-## Database Structure
+## ⚡ Core Business Logic & Security
 
+### 1. Atomic Challan Confirmation (`$transaction`)
+When a challan changes status from `DRAFT` to `CONFIRMED`, the server guarantees zero stock inconsistency:
+
+```typescript
+// backend/src/services/challan.service.ts
+await prisma.$transaction(async (tx) => {
+  // 1. Verify stock availability for all items
+  for (const item of challan.items) {
+    if (item.product.currentStock < item.quantity) {
+      throw new Error(`INSUFFICIENT_STOCK: ${item.productNameSnapshot}`);
+    }
+  }
+
+  // 2. Atomically deduct stock & record movement logs
+  for (const item of challan.items) {
+    await tx.product.update({
+      where: { id: item.productId },
+      data: { currentStock: { decrement: item.quantity } }
+    });
+    await tx.stockMovement.create({
+      data: { productId: item.productId, quantity: item.quantity, movementType: 'OUT', ... }
+    });
+  }
+
+  // 3. Mark Challan as CONFIRMED
+  await tx.salesChallan.update({
+    where: { id: challanId },
+    data: { status: 'CONFIRMED' }
+  });
+});
 ```
-User            — Admin, Sales, Warehouse, Accounts
-Customer        — CRM entity with follow-up tracking
-FollowUpNote    — Separate table for multiple notes per customer
-Product         — Inventory with currentStock / minimumStock
-StockMovement   — Audit log of every IN/OUT movement
-SalesChallan    — Sales order with customer snapshot
-ChallanItem     — Line items with product snapshot (name, SKU, price)
+
+### 2. Snapshot Pattern
+Price fluctuations or product name modifications never retroactively modify historical financial documents. Product name, SKU, unit price, and customer contact details are duplicated into `ChallanItem` and `SalesChallan` tables at time of draft creation.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Framer Motion, Axios, Lucide Icons |
+| **Backend** | Node.js, Express.js, TypeScript, Prisma ORM, Zod, Puppeteer, Bcrypt, JWT |
+| **Database** | PostgreSQL (Neon Cloud Serverless) |
+| **Hosting** | Vercel (Frontend), Railway (Backend Container) |
+
+---
+
+## 🚀 Local Development Setup
+
+### Prerequisites
+- **Node.js**: v18.0.0 or higher
+- **npm**: v9.0.0 or higher
+- **PostgreSQL Database**: Neon Cloud URL or local instance
+
+### Step 1: Clone Repository
+```bash
+git clone https://github.com/Roshan1-0/mini-erp.git
+cd mini-erp
 ```
 
-## Environment Variables
+### Step 2: Backend Setup
+```bash
+cd backend
+npm install
 
-**backend/.env**
+# Create .env file inside backend/
+cp .env.example .env
+```
+
+Configure `backend/.env`:
 ```env
 PORT=5000
 NODE_ENV=development
-DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
-JWT_SECRET=your_long_random_secret
+DATABASE_URL="postgresql://user:password@host/neondb?sslmode=require"
+JWT_SECRET="your_secure_random_jwt_secret_key"
 JWT_EXPIRES_IN=7d
 FRONTEND_URL=http://localhost:5173
 ```
 
-**frontend/.env**
-```env
-VITE_API_BASE_URL=http://localhost:5000/api
-```
-
-## Local Setup
-
-### Prerequisites
-- Node.js 18+
-- A free [Neon PostgreSQL](https://neon.tech) database
-
-### 1. Get Neon Database URL
-
-1. Go to [https://neon.tech](https://neon.tech)
-2. Sign up (free)
-3. Create a new project
-4. Copy the connection string from **Connection Details**
-5. Paste it as `DATABASE_URL` in `backend/.env`
-
-### 2. Backend Setup
-
+Run database migrations & initial seeding:
 ```bash
-cd backend
-
-# Install dependencies (already done)
-npm install
-
-# Run Prisma migration (creates all tables)
+# Apply migrations to PostgreSQL
 npm run db:migrate
 
-# Generate Prisma client
-npm run db:generate
-
-# Seed the database with test data
+# Seed demo users, customers, and inventory
 npm run db:seed
 
-# Start development server
+# Start backend development server
 npm run dev
 ```
+Backend API will run at: `http://localhost:5000`
 
-Backend runs on: http://localhost:5000
-
-### 3. Frontend Setup
-
+### Step 3: Frontend Setup
 ```bash
-cd frontend
-
-# Install dependencies (already done)
+cd ../frontend
 npm install
 
-# Start development server
+# Create .env file inside frontend/
+echo "VITE_API_BASE_URL=http://localhost:5000/api" > .env
+
+# Start Vite development server
 npm run dev
 ```
+Frontend Web UI will run at: `http://localhost:5173`
 
-Frontend runs on: http://localhost:5173
+---
 
-## Test Credentials
+## 📡 API Endpoint Reference
 
-All accounts use password: **password123**
+### Authentication
+- `POST /api/auth/login` — Authenticate user and return JWT token
+- `GET /api/auth/me` — Return current authenticated user profile
 
-| Role | Email |
-|------|-------|
-| Admin | admin@example.com |
-| Sales | sales@example.com |
-| Warehouse | warehouse@example.com |
-| Accounts | accounts@example.com |
+### Customer Relationship Management (CRM)
+- `GET /api/customers` — List customers (supports `page`, `limit`, `search`, `status`, `type`)
+- `POST /api/customers` — Create a new customer record
+- `GET /api/customers/:id` — Retrieve customer details
+- `PUT /api/customers/:id` — Update customer information
+- `POST /api/customers/:id/follow-ups` — Add a follow-up note
+- `GET /api/customers/:id/follow-ups` — List follow-up notes for customer
 
-## API Overview
+### Product & Inventory Management
+- `GET /api/products` — List products (supports `page`, `limit`, `search`, `category`)
+- `POST /api/products` — Create a new product SKU
+- `GET /api/products/:id` — Retrieve product details
+- `PUT /api/products/:id` — Update product details
+- `POST /api/products/:id/stock/add` — Record stock `IN` movement
+- `POST /api/products/:id/stock/remove` — Record manual stock `OUT` adjustment
+- `GET /api/products/:id/stock-movements` — Audit trail of stock movements
 
-```
-POST   /api/auth/login
-GET    /api/auth/me
+### Sales Challans
+- `GET /api/challans` — List sales orders (supports `page`, `limit`, `search`, `status`)
+- `POST /api/challans` — Create a `DRAFT` sales order with snapshot items
+- `GET /api/challans/:id` — Retrieve sales challan details
+- `POST /api/challans/:id/confirm` — Atomic execution: validate, deduct stock, confirm order
+- `POST /api/challans/:id/cancel` — Cancel a draft sales order
+- `GET /api/challans/:id/invoice` — Download generated PDF invoice binary
 
-GET    /api/customers              ?page=1&limit=10&search=&status=&type=
-POST   /api/customers
-GET    /api/customers/:id
-PUT    /api/customers/:id
-POST   /api/customers/:id/follow-ups
-GET    /api/customers/:id/follow-ups
+### System
+- `GET /api/dashboard` — Analytical KPIs, low stock alerts, and due follow-ups
+- `GET /api/health` — System status check
 
-GET    /api/products               ?page=1&limit=10&search=&category=
-POST   /api/products
-GET    /api/products/:id
-PUT    /api/products/:id
-POST   /api/products/:id/stock/add
-POST   /api/products/:id/stock/remove
-GET    /api/products/:id/stock-movements
+---
 
-GET    /api/challans               ?page=1&limit=10&search=&status=
-POST   /api/challans
-GET    /api/challans/:id
-POST   /api/challans/:id/confirm
-POST   /api/challans/:id/cancel
-GET    /api/challans/:id/invoice   (returns PDF stream)
+## 🧪 Postman Collection
 
-GET    /api/dashboard
-GET    /api/health
-```
+A pre-configured Postman Collection is included in the codebase under [`postman/Mini-ERP-CRM.postman_collection.json`](postman/Mini-ERP-CRM.postman_collection.json).
 
-## Business Logic
+To import:
+1. Open Postman ➔ **Import**.
+2. Select `postman/Mini-ERP-CRM.postman_collection.json`.
+3. Set collection variable `baseUrl` to `http://localhost:5000/api` or your Railway URL.
 
-### Challan Confirmation (Critical Flow)
+---
 
-```
-POST /api/challans/:id/confirm
-  ↓
-Check challan.status === DRAFT
-  ↓
-For each item: check product.currentStock >= item.quantity
-  ↓
-prisma.$transaction([
-  product.update (currentStock - quantity) × N
-  stockMovement.create (OUT) × N
-  salesChallan.update (status = CONFIRMED)
-])
-  ↓
-All or nothing — any failure rolls back
-```
+## 📜 License
 
-### Stock Rules
-- `currentStock` can never go below 0
-- Every change creates a `StockMovement` record
-- Low stock when `currentStock <= minimumStock`
-
-### Snapshot Pattern
-When a challan is created, `productNameSnapshot`, `skuSnapshot`, `unitPrice`, and customer details are copied into the challan. Editing a product/customer later does not change old challans.
-
-## Deployment
-
-### Database (Neon)
-1. Create project at https://neon.tech
-2. Copy connection string to `DATABASE_URL`
-
-### Backend (Render)
-1. New Web Service → Connect GitHub repo
-2. Root: `backend/`, Build: `npm run build`, Start: `npm start`
-3. Add environment variables: `DATABASE_URL`, `JWT_SECRET`, `NODE_ENV=production`, `FRONTEND_URL`
-4. Run migrations: `npx prisma migrate deploy`
-
-### Frontend (Vercel)
-1. Import repo on Vercel
-2. Root: `frontend/`
-3. Add: `VITE_API_BASE_URL=https://your-backend.onrender.com/api`
-
-## Known Limitations
-
-- No purchase order or supplier management
-- Confirmed challans cannot be cancelled (prevents complex stock reversal)
-- No real-time notifications
-- No tax calculation engine
-- No email/SMS integration
-- Single currency (INR)
+This project is open-source under the **MIT License**.
