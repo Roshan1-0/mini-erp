@@ -1,6 +1,20 @@
 import axios from 'axios';
 
-const apiBaseUrl = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const rawUrl = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+function getSanitizedBaseUrl(url: string): string {
+  let formatted = url.trim();
+  if (!formatted.startsWith('http://') && !formatted.startsWith('https://')) {
+    formatted = `https://${formatted}`;
+  }
+  formatted = formatted.replace(/\/+$/, '');
+  if (!formatted.endsWith('/api')) {
+    formatted = `${formatted}/api`;
+  }
+  return formatted;
+}
+
+const apiBaseUrl = getSanitizedBaseUrl(rawUrl);
 
 const api = axios.create({
   baseURL: apiBaseUrl,
