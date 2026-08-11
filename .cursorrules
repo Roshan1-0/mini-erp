@@ -1,0 +1,116 @@
+# MINI ERP + CRM — AI CODING RULES
+
+## 1. PROJECT PURPOSE
+
+This project is a small internal ERP + CRM operations portal for a wholesale/distribution company.
+
+The application is used by: Admin, Sales, Warehouse, Accounts.
+
+Do NOT add unnecessary enterprise architecture.
+Do NOT add AI features, chatbots, fake analytics, or features not required by the PRD.
+
+## 2. REQUIRED TECHNOLOGY
+
+Backend: Node.js, TypeScript, Express.js, PostgreSQL, Prisma ORM, JWT, bcrypt, Zod, Puppeteer, dotenv, cors
+Frontend: React, Vite, TypeScript, Tailwind CSS, Axios, React Router, Lucide React, Framer Motion, Lenis
+Deployment: Vercel (frontend), Render (backend), Neon (database)
+
+DO NOT USE: AWS, Docker, GitHub Actions, Kubernetes, NestJS, Redux, GraphQL, Microservices
+
+## 3. CODING STYLE
+
+Code must look like it was written by a good final-year student developer.
+Simple, readable, direct, easy to explain in an interview, properly typed.
+
+Prefer: `const user = await prisma.user.findUnique(...)`
+Do NOT create: factories, repositories, generic service wrappers, dependency injection systems.
+Use normal Express controllers and services.
+
+## 4. FILE SIZE
+
+Keep files below 250 lines. Split logically if needed.
+
+## 5. COMMENTS
+
+Short and useful only. Good: `// Check stock before confirming challan`
+
+## 6. NO PLACEHOLDER CODE
+
+Never generate: TODO, FIXME, Coming soon, Dummy API responses, Placeholder functions.
+
+## 7. BACKEND ARCHITECTURE
+
+Route → Middleware → Controller → Service → Prisma → PostgreSQL
+Controllers: request/response/status. Business logic in services.
+
+## 8. API RESPONSE FORMAT
+
+Success: `{ "success": true, "message": "...", "data": {...} }`
+Error: `{ "success": false, "message": "...", "error": "ERROR_CODE" }`
+
+## 9. HTTP STATUS CODES
+
+200 GET/update, 201 create, 400 validation/business, 401 auth, 403 permissions, 404 not found, 409 conflict, 500 server error
+
+## 10. VALIDATION
+
+Use Zod for all POST and PUT/PATCH. Never trust frontend validation alone.
+
+## 11. AUTHENTICATION
+
+JWT with bcrypt. Never return password_hash. JWT payload: { id, role, email }.
+Frontend sends: `Authorization: Bearer <token>`
+
+## 12. ROLE BASED ACCESS
+
+Admin: full access
+Sales: customers, view inventory, create/edit/confirm challans
+Warehouse: view inventory, add/remove stock, view confirmed challans
+Accounts: view customers, view confirmed challans, export invoice PDF
+
+## 13. DATABASE
+
+PostgreSQL with Prisma. schema.prisma is source of truth. Use migrations. Never manually create conflicting SQL.
+
+## 14. INVENTORY BUSINESS LOGIC
+
+Never allow currentStock < 0. Every stock change creates StockMovement record.
+IN: currentStock + quantity. OUT: currentStock - quantity (with pre-check).
+
+## 15. CHALLAN BUSINESS LOGIC
+
+Draft: does NOT reduce stock.
+Confirmed: MUST reduce stock in a database transaction.
+Cancelled: does not reduce stock.
+Confirmed challan cannot be confirmed again. Confirmation uses Prisma transaction.
+
+## 16. PRODUCT SNAPSHOT
+
+Store productId, productName, sku, quantity, unitPrice, total inside challan items.
+Historical challans must not change if product changes.
+
+## 17. CHALLAN NUMBERS
+
+Format: CH-2026-0001. Auto-generated. Unique.
+
+## 18. UI DESIGN
+
+Internal business software. NOT a generic AI-generated SaaS dashboard.
+DO NOT use: excessive glassmorphism, glowing cards, neon gradients, huge hero sections, fake AI badges, unnecessary charts.
+
+## 19. COLOR SYSTEM
+
+#051F20 (sidebar), #0B2B26, #163832, #235347 (primary btn), #8EB69B (sage), #DAF1DE (light bg)
+Only red for errors, amber for warnings, green for success.
+
+## 20. ANIMATION
+
+Framer Motion for page fade/slide, card entrance, modal entrance only. 150ms-300ms. Don't animate everything.
+
+## 21. AI AGENT BEHAVIOR
+
+Read .cursorrules, prd.md, tasks.md, schema.prisma before writing code.
+Work ONE task at a time. Implement only the current task. Do NOT automatically implement future tasks.
+Do NOT refactor unrelated files. Do NOT change the database schema without explaining why.
+
+When uncertain between complex and simple architecture: choose SIMPLE WORKING ARCHITECTURE.

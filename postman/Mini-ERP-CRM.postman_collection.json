@@ -1,0 +1,154 @@
+{
+  "info": {
+    "name": "Mini ERP + CRM API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "mini-erp-crm-collection"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "token", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"admin@example.com\",\"password\":\"password123\"}"
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": { "method": "GET", "url": "{{baseUrl}}/auth/me", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] } }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        { "name": "Get Dashboard", "request": { "method": "GET", "url": "{{baseUrl}}/dashboard" } }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        { "name": "List Customers", "request": { "method": "GET", "url": "{{baseUrl}}/customers?page=1&limit=10" } },
+        { "name": "Search Customers", "request": { "method": "GET", "url": "{{baseUrl}}/customers?search=patel&status=ACTIVE" } },
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/customers",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"name\":\"Vijay Mehta\",\"mobile\":\"9812312345\",\"email\":\"vijay@mehta.com\",\"businessName\":\"Mehta Traders\",\"gstNumber\":\"27AABCM1234D1Z5\",\"type\":\"WHOLESALE\",\"address\":\"45 Main Road, Surat\",\"status\":\"LEAD\"}" }
+          }
+        },
+        { "name": "Get Customer", "request": { "method": "GET", "url": "{{baseUrl}}/customers/1" } },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT", "url": "{{baseUrl}}/customers/1",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"status\":\"ACTIVE\"}" }
+          }
+        },
+        {
+          "name": "Add Follow-up Note",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/customers/1/follow-ups",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"note\":\"Discussed bulk order pricing. Customer interested in Q2 order.\",\"followUpDate\":\"2026-09-01T00:00:00.000Z\"}" }
+          }
+        },
+        { "name": "Get Follow-ups", "request": { "method": "GET", "url": "{{baseUrl}}/customers/1/follow-ups" } }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        { "name": "List Products", "request": { "method": "GET", "url": "{{baseUrl}}/products?page=1&limit=10" } },
+        { "name": "Search Products", "request": { "method": "GET", "url": "{{baseUrl}}/products?search=rice&category=Grains" } },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/products",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"name\":\"Coconut Oil 1L\",\"sku\":\"COCONUT-1L\",\"category\":\"Oils\",\"unitPrice\":220,\"currentStock\":50,\"minimumStock\":10,\"location\":\"Rack F-1\"}" }
+          }
+        },
+        { "name": "Get Product", "request": { "method": "GET", "url": "{{baseUrl}}/products/1" } },
+        {
+          "name": "Add Stock (IN)",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/products/1/stock/add",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"quantity\":50,\"reason\":\"Received from supplier — Invoice #INV-2026-123\"}" }
+          }
+        },
+        {
+          "name": "Remove Stock (OUT)",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/products/1/stock/remove",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"quantity\":10,\"reason\":\"Manual stock correction\"}" }
+          }
+        },
+        {
+          "name": "Remove Stock — Insufficient (expect 400)",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/products/3/stock/remove",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"quantity\":1000,\"reason\":\"Test insufficient stock\"}" }
+          }
+        },
+        { "name": "Get Stock Movements", "request": { "method": "GET", "url": "{{baseUrl}}/products/1/stock-movements" } }
+      ]
+    },
+    {
+      "name": "Challans",
+      "item": [
+        { "name": "List Challans", "request": { "method": "GET", "url": "{{baseUrl}}/challans?page=1&limit=10" } },
+        { "name": "Filter by Status", "request": { "method": "GET", "url": "{{baseUrl}}/challans?status=DRAFT" } },
+        {
+          "name": "Create Draft Challan",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/challans",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"customerId\":1,\"items\":[{\"productId\":1,\"quantity\":10},{\"productId\":2,\"quantity\":5}]}" }
+          }
+        },
+        { "name": "Get Challan", "request": { "method": "GET", "url": "{{baseUrl}}/challans/1" } },
+        {
+          "name": "Confirm Challan",
+          "request": { "method": "POST", "url": "{{baseUrl}}/challans/1/confirm" }
+        },
+        {
+          "name": "Confirm Again (expect 400)",
+          "request": { "method": "POST", "url": "{{baseUrl}}/challans/1/confirm" }
+        },
+        {
+          "name": "Cancel Draft Challan",
+          "request": { "method": "POST", "url": "{{baseUrl}}/challans/2/cancel" }
+        },
+        { "name": "Download Invoice PDF", "request": { "method": "GET", "url": "{{baseUrl}}/challans/1/invoice" } }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        { "name": "Health", "request": { "method": "GET", "url": "{{baseUrl}}/health", "auth": { "type": "noauth" } } }
+      ]
+    }
+  ]
+}
